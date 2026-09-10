@@ -105,32 +105,36 @@ class ReportController extends Controller
     ]);
 
     // === NOTIFICATIONS + EMAILS ===
-$admin = \App\Models\User::where('role', 'admin')->first();
-$client = $intervention->agency->client; // ou $intervention->agency->clientUser si tu as une relation
+    $admins = \App\Models\User::where('role', 'admin')->get();
+    $client = $intervention->agency?->client;
 
-if ($admin) {
-    \App\Models\Notification::create([
-        'user_id'   => $admin->id,
-        'title'     => 'Rapport soumis',
-        'message'   => "Le technicien {$request->user()->name} a soumis un rapport pour l'intervention #{$intervention->id}",
-        'type'      => 'report_submitted',
-        'data'      => ['report_id' => $report->id, 'intervention_id' => $intervention->id],
-    ]);
+    foreach ($admins as $adminUser) {
+        \App\Models\Notification::create([
+            'user_id'   => $adminUser->id,
+            'title'     => 'Rapport soumis',
+            'message'   => "Le technicien {$request->user()->name} a soumis un rapport pour l'intervention #{$intervention->id}",
+            'type'      => 'report_submitted',
+            'data'      => ['report_id' => $report->id, 'intervention_id' => $intervention->id],
+        ]);
+    }
 
-    // Email Admin
-    \Mail::to($admin->email)->queue(new \App\Mail\ReportSubmittedMail($report, $intervention, 'admin'));
-}
+    try {
+        $firstAdmin = $admins->first();
+        if ($firstAdmin) {
+            \Mail::to($firstAdmin->email)->queue(new \App\Mail\ReportSubmittedMail($report, $intervention, 'admin'));
+        }
 
-if ($client) {
-    // Email Client
-    \Mail::to($client->email)->queue(new \App\Mail\ReportSubmittedMail($report, $intervention, 'client'));
-}
+        if ($client) {
+            \Mail::to($client->email)->queue(new \App\Mail\ReportSubmittedMail($report, $intervention, 'client'));
+        }
+    } catch (\Throwable $e) {
+        \Log::error('Erreur lors de l\'envoi des emails de rapport: ' . $e->getMessage());
+    }
 
     return response()->json([
-    'message' => 'Rapport soumis avec succès.',
-    'report'  => $report->load(['equipment', 'intervention.agency:id,name'])
-                       ->append(['pv_file_url', 'defective_photos_urls']),  // ← modifié
-], 201);
+        'message' => 'Rapport soumis avec succès.',
+        'report'  => $report->load(['equipment', 'intervention.agency:id,name']),
+    ], 201);
 }
 
     /**

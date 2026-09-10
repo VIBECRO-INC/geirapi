@@ -31,14 +31,7 @@ public function index(Request $request)
             $query->where('agency_id', $request->agency_id);
         }
 
-        $interventions = $query->orderBy('planned_date')->get();
-
-        // Force l'ajout de l'URL du PV pour chaque rapport qui existe
-        foreach ($interventions as $intervention) {
-            if ($intervention->report) {
-                $intervention->report->append('pv_file_url');
-            }
-        }
+        $interventions = $query->orderByDesc('updated_at')->orderByDesc('planned_date')->get();
 
         return response()->json($interventions);
     }

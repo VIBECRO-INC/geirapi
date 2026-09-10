@@ -38,6 +38,11 @@ class Report extends Model
         'defective_photos'    => 'array',
     ];
 
+    protected $appends = [
+        'pv_file_url',
+        'defective_photos_urls',
+    ];
+
     // ── Relations ────────────────────────────────────────────────────────
     public function intervention()
     {

@@ -31,7 +31,7 @@ class DashboardController extends Controller
                                    $interventions->get('reported', 0) +
                                    $interventions->get('validated', 0);
 
-        $pendingReports  = Report::where('status', 'submitted')->count();
+        $pendingReports  = Report::whereIn('status', ['submitted', 'sent_to_client'])->count();
         $validatedReports = Report::where('status', 'validated')->count();
 
         $performanceAvg = Agency::avg('performance') ?? 0;
@@ -42,9 +42,9 @@ class DashboardController extends Controller
             ->limit(5)
             ->get(['id', 'name', 'performance', 'status', 'client_id']);
 
-        // Interventions récentes
-        $recentInterventions = Intervention::with(['agency:id,name', 'technician:id,name'])
-            ->latest()
+        // Interventions récentes (avec rapport)
+        $recentInterventions = Intervention::with(['agency:id,name', 'technician:id,name', 'report'])
+            ->latest('updated_at')
             ->limit(5)
             ->get();
 
