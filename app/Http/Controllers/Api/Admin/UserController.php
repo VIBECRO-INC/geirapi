@@ -82,19 +82,17 @@ class UserController extends Controller
     $data = $request->validate([
         'name'               => 'required|string|max:255',
         'email'              => 'required|email|unique:users,email',
+        'password'           => 'required|string|min:6',
         'company_name'       => 'required|string|max:255',
         'phone'              => 'nullable|string|max:20',
         'location'           => 'nullable|string',
         'intervention_count' => 'nullable|integer|min:0',
     ]);
 
-    // Générer un mot de passe aléatoire sécurisé
-    $password = Str::password(6);   // 6 caractères aléatoires
-
     $client = User::create([
         'name'         => $data['name'],
         'email'        => $data['email'],
-        'password'     => Hash::make($password),
+        'password'     => Hash::make($data['password']),
         'role'         => 'client',
         'company_name' => $data['company_name'],
         'phone'        => $data['phone'] ?? null,
@@ -102,7 +100,7 @@ class UserController extends Controller
     ]);
 
     // Envoi de l'email de bienvenue avec le mot de passe
-    // \Mail::to($client->email)->send(new \App\Mail\ClientWelcomeMail($client, $password));
+    // \Mail::to($client->email)->send(new \App\Mail\ClientWelcomeMail($client, $data['password']));
 
     $agency = Agency::create([
         'client_id' => $client->id,
