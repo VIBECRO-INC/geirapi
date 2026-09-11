@@ -176,10 +176,17 @@ class UserController extends Controller
         $data = $request->validate([
             'name'         => 'sometimes|required|string|max:255',
             'email'        => 'sometimes|required|email|unique:users,email,' . $user->id,
+            'password'     => 'nullable|string|min:6',
             'company_name' => 'sometimes|required|string|max:255',
             'phone'        => 'nullable|string|max:20',
             'location'     => 'nullable|string',
         ]);
+
+        if (!empty($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        } else {
+            unset($data['password']);
+        }
 
         $user->update($data);
 
